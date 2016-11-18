@@ -308,6 +308,7 @@ private:
   friend class sim_t;
   friend class mmu_t;
   friend class rtc_t;
+  friend class uart_t;
   friend class extension_t;
 
   void parse_isa_string(const char* isa);

@@ -50,7 +50,7 @@ sim_t::sim_t(const char* isa, size_t nprocs, size_t mem_mb, bool halted,
   }
 
   rtc.reset(new rtc_t(procs));
-  uart.reset(new uart_t());
+  uart.reset(new uart_t(procs));
   make_config_string();
 }
 
@@ -107,10 +107,10 @@ void sim_t::step(size_t n)
         current_proc = 0;
         rtc->increment(INTERLEAVE / INSNS_PER_RTC_TICK);
       }
-
       host->switch_to();
     }
   }
+  uart->getchar_int();
 }
 
 void sim_t::set_debug(bool value)

@@ -3,6 +3,19 @@
 #include "processor.h"
 #include <unistd.h>
 
+int kbhit()
+{
+    struct timeval tv = { 0L, 0L };
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
+    return select(1, &fds, NULL, NULL, &tv);
+}
+
+uart_t::uart_t(std::vector<processor_t*>& procs)
+  : procs(procs)
+{
+}
 bool uart_t::load(reg_t addr, size_t len, uint8_t* bytes)
 {
   uint32_t* word = (uint32_t*)bytes;
@@ -21,12 +34,17 @@ bool uart_t::load(reg_t addr, size_t len, uint8_t* bytes)
       *word = 1024; // a lot
       return true;
     case 0x20:  // rx data
+      if(kbhit()){
+        *word = getchar();
+        procs[0]->state.mip &= ~MIP_SEIP;
+        return true;
+      }
       return false;
     case 0x24:  // rx status
       *word = 2;    // empty
       return true;
     case 0x28:  // rx count
-      *word = 0;    // empty
+      *word = kbhit() ? 1 : 0;
       return true;
     case 0x2C:  // rx free
       *word = 1024; // a lot
@@ -51,4 +69,14 @@ bool uart_t::store(reg_t addr, size_t len, const uint8_t* bytes)
   }
 
   return true;
+}
+
+/* getchar_int
+ * 
+ * Generates an interrupt for getchar
+ * */
+void uart_t::getchar_int()
+{
+  if(kbhit())
+    procs[0]->state.mip |= MIP_SEIP;
 }
