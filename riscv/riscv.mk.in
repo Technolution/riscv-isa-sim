@@ -46,6 +46,7 @@ riscv_srcs = \
 	rom.cc \
 	rtc.cc \
     uart.cc \
+    plic.cc \
 	gdbserver.cc \
 	debug_module.cc \
 	$(riscv_gen_srcs) \

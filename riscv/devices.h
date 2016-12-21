@@ -47,15 +47,35 @@ class rtc_t : public abstract_device_t {
   uint64_t time() { return regs[0]; }
 };
 
+class plic_t : public abstract_device_t {
+ public:
+  plic_t(std::vector<processor_t*>&);
+  bool load(reg_t addr, size_t len, uint8_t* bytes);
+  bool store(reg_t addr, size_t len, const uint8_t* bytes);
+  size_t size() { return 0x200; }
+  void set_interrupt( uint32_t irq );
+  void clear_interrupt( uint32_t irq );
+ private:
+  std::vector<processor_t*>& procs;
+  uint32_t ie;
+  uint32_t priority[2];
+  uint32_t thres;
+  uint32_t pending;
+  uint32_t claimed;
+  uint32_t claim;
+};
+
 class uart_t : public abstract_device_t {
  public:
   uart_t(std::vector<processor_t*>&);
+  void add_plic(plic_t*);
   bool load(reg_t addr, size_t len, uint8_t* bytes);
   bool store(reg_t addr, size_t len, const uint8_t* bytes);
   size_t size() { return 8; }
   void getchar_int();
  private:
   std::vector<processor_t*>& procs;
+  plic_t* plic;
 };
 
 #endif

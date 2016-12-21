@@ -15,7 +15,13 @@ int kbhit()
 uart_t::uart_t(std::vector<processor_t*>& procs)
   : procs(procs)
 {
+   plic = NULL;
 }
+
+void uart_t::add_plic(plic_t* plic_ref) {
+    plic = plic_ref;
+}
+
 bool uart_t::load(reg_t addr, size_t len, uint8_t* bytes)
 {
   uint32_t* word = (uint32_t*)bytes;
@@ -37,6 +43,8 @@ bool uart_t::load(reg_t addr, size_t len, uint8_t* bytes)
       if(kbhit()){
         *word = getchar();
         procs[0]->state.mip &= ~MIP_SEIP;
+        if (plic)
+           plic->clear_interrupt(1);
         return true;
       }
       return false;
@@ -79,4 +87,6 @@ void uart_t::getchar_int()
 {
   if(kbhit())
     procs[0]->state.mip |= MIP_SEIP;
+    if (plic)
+        plic->set_interrupt(1);
 }

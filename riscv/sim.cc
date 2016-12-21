@@ -50,7 +50,10 @@ sim_t::sim_t(const char* isa, size_t nprocs, size_t mem_mb, bool halted,
   }
 
   rtc.reset(new rtc_t(procs));
+  plic.reset(new plic_t(procs));
   uart.reset(new uart_t(procs));
+  // add a plic reference to the uart
+  uart.get()->add_plic(plic.get());
   make_config_string();
 }
 
@@ -155,13 +158,15 @@ void sim_t::make_config_string()
 {
   reg_t rtc_addr = EXT_IO_BASE;
   reg_t uart_addr = EXT_IO_BASE + 0x1000;
+  reg_t plic_addr = EXT_IO_BASE + 0x4000;
 
   bus.add_device(rtc_addr, rtc.get());
   bus.add_device(uart_addr, uart.get());
+  bus.add_device(plic_addr, plic.get());
 
   const int align = 0x1000;
   //reg_t cpu_addr = rtc_addr + ((rtc->size() - 1) / align + 1) * align;
-  reg_t cpu_addr = uart_addr + ((uart->size() - 1) / align + 1) * align;
+  reg_t cpu_addr = plic_addr + ((plic->size() - 1) / align + 1) * align;
   reg_t cpu_size = align;
 
   uint32_t reset_vec[8] = {
@@ -185,8 +190,24 @@ void sim_t::make_config_string()
         "  addr 0x" << rtc_addr << ";\n"
         "};\n"
         "uart {\n"
+        "  interface sbi;\n"
         "  addr 0x" << uart_addr << ";\n"
+        "  mem { 0x" << uart_addr << " 0x" << (uart_addr + 0x7f) << "; };\n"
+        "  irq 0;\n"
         "};\n"
+        "plic {\n"
+        "  interface plic;\n"
+        "  ndevs 1;\n"
+        "  priority 0x" << (plic_addr + 0x80) << ";\n"
+        "  0 {\n"
+        "    0 {\n"
+        "        ie 0x" << plic_addr << ";\n"
+        "        thres 0x" << (plic_addr + 0x100) << ";\n"
+        "        claim 0x" << (plic_addr + 0x104) << ";\n"
+        "        mem { 0x" << (plic_addr + 0x100) << " 0x" << (plic_addr + 0x107) << "; };\n"
+        "    };\n"
+        "  };\n";
+   s << "};\n"
         "ram {\n"
         "  0 {\n"
         "    addr 0x" << DRAM_BASE << ";\n"
