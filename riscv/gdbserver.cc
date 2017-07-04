@@ -351,8 +351,8 @@ class halt_op_t : public operation_t
     }
 
     bool perform_step(unsigned int step) {
+      gs.tselect_valid = false;
       switch (state) {
-        gs.tselect_valid = false;
         case ST_ENTER:
           if (gs.xlen == 0) {
             gs.dr_write32(0, xori(S1, ZERO, -1));
