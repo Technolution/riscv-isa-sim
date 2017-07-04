@@ -85,8 +85,9 @@ bool uart_t::store(reg_t addr, size_t len, const uint8_t* bytes)
  * */
 void uart_t::getchar_int()
 {
-  if(kbhit())
+  if(kbhit()) {
     procs[0]->state.mip |= MIP_SEIP;
     if (plic)
         plic->set_interrupt(1);
+  }
 }
